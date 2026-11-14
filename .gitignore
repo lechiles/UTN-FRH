@@ -1,0 +1,5 @@
+# Por las dudas: nunca subir copias de datos ni archivos personales
+*.json
+!manifest.webmanifest
+cursada-migracion/
+archivos/

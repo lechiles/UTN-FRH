@@ -300,6 +300,9 @@ body.has-timer .main{padding-bottom:140px}
 .grilla .gx{position:absolute;top:2px;right:2px;border:0;background:none;color:var(--muted);cursor:pointer;font-size:.9rem;line-height:1}
 .grilla .gx:hover{color:var(--crit)}
 .loading{padding:60px 0;text-align:center;color:var(--muted)}
+/* ===== pantallas anchas: el contenido usa el espacio disponible y queda centrado ===== */
+@media (min-width:961px){.main{max-width:none;padding-left:max(32px,calc((100vw - var(--side) - 1800px)/2));padding-right:max(32px,calc((100vw - var(--side) - 1800px)/2))}}
+@media (min-width:1700px){.grid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}.stats{gap:18px}.cols{gap:28px}}
 /* ===== avisos calmos ===== */
 .alert{background:var(--surface-2);color:var(--ink);position:relative;padding:11px 14px 11px 32px}
 .alert::before{content:"";position:absolute;left:14px;top:17px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
