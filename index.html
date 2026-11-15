@@ -228,10 +228,13 @@ details.box[open] summary{margin-bottom:12px}
 
 /* horas */
 .hbars{display:flex;flex-direction:column;gap:9px}
-.hbar{display:grid;grid-template-columns:minmax(0,160px) minmax(0,1fr) 56px;gap:10px;align-items:center;font-size:.86rem}
+.hbar{display:grid;grid-template-columns:minmax(0,clamp(140px,30%,340px)) minmax(0,1fr) 56px;gap:10px;align-items:center;font-size:.86rem}
 .hbar .trk{height:10px;background:var(--surface-2);border-radius:99px;overflow:hidden}
 .hbar .trk span{display:block;height:100%;border-radius:99px;background:hsl(var(--mh) var(--ms) var(--ml))}
 .hbar .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hgrupo{display:flex;flex-direction:column;gap:9px}
+.hgrupo+.hgrupo{border-top:1px solid var(--line);padding-top:12px;margin-top:6px}
+.hgrupo-tit{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow)}
 .stat b{display:block;font-family:var(--f-display);font-size:1.6rem;line-height:1.1;letter-spacing:-.02em}
@@ -875,7 +878,13 @@ function tExamenes(m,modo){
     const ord=m.temas.map(t=>({t,c:fr.c[t.id]||0})).sort((x,y)=>y.c-x.c);
     const nota=fr.n<2?' · con 2 o más, el plan ajusta los tiempos':usa?' · el plan ya le da más tiempo a los de arriba':' · el plan hoy usa '+(fin?'los parciales':'los modelos de final')+', porque lo próximo es '+(fin?'un parcial':'un final');
     h+='<div class="box2"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px"><b>Qué temas se toman más</b><span class="small muted">'+fr.n+(fr.n>1?(fin?' finales':' parciales'):(fin?' final':' parcial'))+' clasificado'+(fr.n>1?"s":"")+nota+'</span></div><div class="hbars">';
-    ord.forEach(({t,c})=>{h+='<div class="hbar"><span class="nm" title="'+esc(t.nombre)+'">'+esc(t.nombre)+'</span><span class="trk"><span style="width:'+(c/fr.n*100)+'%;background:'+(c/fr.n>=.6?"var(--crit)":c/fr.n>=.3?"var(--warn)":"var(--line-strong)")+'"></span></span><span class="num small" style="text-align:right">'+c+'/'+fr.n+'</span></div>'});
+    const barra=(t,c,n)=>'<div class="hbar"><span class="nm" title="'+esc(t.nombre)+'">'+esc(t.nombre)+'</span><span class="trk"><span style="width:'+(c/n*100)+'%;background:'+(c/n>=.6?"var(--crit)":c/n>=.3?"var(--warn)":"var(--line-strong)")+'"></span></span><span class="num small" style="text-align:right">'+c+'/'+n+'</span></div>';
+    /* parciales: un bloque por parcial (1.º, 2.º, …), cada uno con sus propios temas y su propio total */
+    const grupos=fin?[]:["p1","p2","p3","p4","rec","otro"].map(k=>{const ee=ex.filter(e=>e.tipo===k&&(e.temaIds||[]).length),c={};ee.forEach(e=>e.temaIds.forEach(id=>c[id]=(c[id]||0)+1));return{k,n:ee.length,ord:m.temas.map(t=>({t,c:c[t.id]||0})).filter(o=>o.c).sort((x,y)=>y.c-x.c)}}).filter(g=>g.n);
+    if(grupos.length>1){
+      grupos.forEach(g=>{h+='<div class="hgrupo"><div class="hgrupo-tit"><b>'+TIPO_EX[g.k]+'</b><span class="small muted">'+g.n+(g.n>1?' clasificados':' clasificado')+'</span></div>'+g.ord.map(o=>barra(o.t,o.c,g.n)).join("")+'</div>'});
+      h+='<details class="hgrupo"><summary class="small" style="cursor:pointer">Ver todos los parciales juntos</summary><div class="hbars" style="margin-top:8px">'+ord.map(o=>barra(o.t,o.c,fr.n)).join("")+'</div></details>';
+    }else ord.forEach(({t,c})=>{h+=barra(t,c,fr.n)});
     const flojos=ord.filter(o=>o.c/fr.n>=.5&&o.t.estado!=="dominado");
     h+='</div>'+(flojos.length?'<div class="alert crit" style="margin-top:10px"><span>Aparecen en la mitad o más de '+(fin?'los finales':'los parciales')+' y todavía no los dominás: <b>'+flojos.map(o=>esc(o.t.nombre)).join(", ")+'</b>.</span></div>':'')+'</div>';
   }
