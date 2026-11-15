@@ -587,9 +587,9 @@ const FDIF={1:.8,2:1,3:1.3};
 const esFinalEx=e=>e.tipo==="final";
 /* qué banco usar para una materia: modelos de final si lo próximo es un final (o es un final pendiente), si no parciales; con menos de 2 clasificados, todos juntos */
 function modoBanco(m){const ev=proxEval(m);return (ev?ev.tipo==="final":m.tipo==="final")?"final":"parcial"}
-function frecuencias(m,modo){
+function frecuencias(m,modo,sinRec){
   if(modo===undefined){const mo=modoBanco(m),f=frecuencias(m,mo);return f.n>=2?Object.assign(f,{modo:mo}):Object.assign(frecuencias(m,"todos"),{modo:"todos"})}
-  const ex=(m.examenes||[]).filter(e=>(e.temaIds||[]).length&&(modo==="todos"||(modo==="final")===esFinalEx(e))),c={};ex.forEach(e=>e.temaIds.forEach(id=>c[id]=(c[id]||0)+1));return{c,n:ex.length}}
+  const ex=(m.examenes||[]).filter(e=>(e.temaIds||[]).length&&!(sinRec&&e.tipo==="rec")&&(modo==="todos"||(modo==="final")===esFinalEx(e))),c={};ex.forEach(e=>e.temaIds.forEach(id=>c[id]=(c[id]||0)+1));return{c,n:ex.length}}
 /* con 2 o más parciales clasificados, los temas que más se toman reciben hasta 40% más de tiempo y los que nunca aparecieron, 20% menos */
 function pesoTema(m,t){const{c,n}=frecuencias(m);if(n<2)return 1;return .8+.6*((c[t.id]||0)/n)}
 function proxRepaso(m,t){
@@ -871,7 +871,7 @@ function vMateria(){
 }
 function selTema(m,id,sel,todos){return '<select name="tema" id="'+id+'" aria-label="Tema"><option value="">'+(todos?"Sin tema / general":"Sin tema")+'</option>'+m.temas.map(t=>'<option value="'+t.id+'"'+(sel===t.id?" selected":"")+'>'+esc(t.nombre)+'</option>').join("")+'</select>'}
 function tExamenes(m,modo){
-  const fin=modo==="final",ex=(m.examenes||[]).filter(e=>esFinalEx(e)===fin),fr=frecuencias(m,modo);
+  const fin=modo==="final",ex=(m.examenes||[]).filter(e=>esFinalEx(e)===fin),fr=frecuencias(m,modo,true);/* en "qué temas se toman más" no cuentan los recuperatorios: repiten temas de los parciales */
   const usa=frecuencias(m).modo===modo;
   let h='<header><h2>'+(fin?"Modelos de final":"Parciales viejos")+'</h2><p>'+(fin?"Subí finales de otras mesas y marcá qué temas toma cada uno.":"Subí parciales de otros años y marcá qué temas toma cada uno.")+'</p></header>';
   if(fr.n){
