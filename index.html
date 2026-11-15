@@ -220,6 +220,9 @@ a.mcard:hover{border-color:var(--line-strong);transform:translateY(-1px)}
 .group-h{font-size:.76rem;font-weight:600;color:var(--muted);margin:16px 0 2px}
 .evcard{border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
 .evcard .line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.evcard.exhecho>:not(.line){opacity:.6}
+.evcard.exhecho .line>:not(.hecho-chk):not(.btn){opacity:.6}
+.hecho-chk{font-weight:600;white-space:nowrap}
 .temas-pick{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.86rem}
 details.box{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;background:var(--surface-2)}
 details.box summary{cursor:pointer;font-weight:600}
@@ -510,7 +513,7 @@ function sanear(s){
     (m.tareas||[]).forEach(t=>{t.id=idok(t.id);t.min=num(t.min)||30;t.temaId=idok(t.temaId)});
     (m.evaluaciones||[]).forEach(e=>{e.id=idok(e.id);e.nota=num(e.nota);e.fecha=fecha(e.fecha);e.temaIds=(e.temaIds||[]).map(idok)});
     (m.apuntes||[]).forEach(a=>{a.id=idok(a.id);if(a.url!=null)a.url=link(a.url);if(a.assetId)a.assetId=idok(a.assetId)});
-    (m.examenes||[]).forEach(e=>{e.id=idok(e.id);if(e.url!=null)e.url=link(e.url);if(e.assetId)e.assetId=idok(e.assetId);const n=num(e.anio);e.anio=n==null?"":n;e.temaIds=(e.temaIds||[]).map(idok)});
+    (m.examenes||[]).forEach(e=>{e.id=idok(e.id);if(e.url!=null)e.url=link(e.url);if(e.assetId)e.assetId=idok(e.assetId);const n=num(e.anio);e.anio=n==null?"":n;e.hecho=!!e.hecho;e.hechoFecha=e.hecho?fecha(e.hechoFecha):null;e.temaIds=(e.temaIds||[]).map(idok)});
     (m.ejercicios||[]).forEach(x=>{x.id=idok(x.id);x.temaId=idok(x.temaId)});
     (m.sesiones||[]).forEach(x=>{x.id=idok(x.id);x.min=num(x.min)||0;x.fecha=fecha(x.fecha)});
     (m.fichas||[]).forEach(f=>{f.id=idok(f.id);f.temaId=idok(f.temaId)});
@@ -904,10 +907,12 @@ function tExamenes(m,modo){
     +'<label class="f" style="flex-basis:100%">Notas<textarea name="notas" id="f-ex-notas-'+modo+'" placeholder="'+(fin?'Ej.: teórico de Taylor con demostración; práctico de integrales impropias.':'Ej.: el ejercicio 2 era de Gauss con una esfera hueca; tomaron teoría de capacitores.')+'"></textarea></label>'
     +'<button class="btn primary" type="submit">Guardar</button>'+(store.assets?'':'<span class="small muted">Para subir archivos iniciá sesión.</span>')+'</form></details>';
   if(!ex.length)return h+'<div class="empty">'+(fin?'Todavía no cargaste modelos de final de esta materia.':'Todavía no cargaste parciales viejos de esta materia.')+'</div>';
+  const nh=ex.filter(e=>e.hecho).length;
+  h+='<div class="small muted" style="margin:0 0 8px">'+(nh?'Hiciste <b class="num">'+nh+'</b> de <b class="num">'+ex.length+'</b>'+(nh===ex.length?' · ¡todos!':''):'Tildá «Ya lo hice» en los que vayas resolviendo.')+'</div>';
   h+='<div style="display:flex;flex-direction:column;gap:10px">';
   ex.slice().sort((x,y)=>(+y.anio||0)-(+x.anio||0)).forEach(e=>{
     const href=e.url;
-    h+='<div class="evcard"><div class="line"><span class="chip acc">'+(fin?'Final':TIPO_EX[e.tipo])+'</span><b class="num">'+esc(e.anio||"")+'</b><span class="t" style="flex:1 1 140px">'+esc(e.titulo||"")+'</span>'+(e.assetId?'<button class="btn sm" data-act="verArchivo" data-asset="'+esc(e.assetId)+'" data-title="'+esc(e.titulo||TIPO_EX[e.tipo])+'">Abrir</button>':href?'<a class="btn sm" href="'+esc(href)+'" target="_blank" rel="noopener">Abrir link</a>':'')+'<button class="btn ghost sm" data-act="borrarExamen" data-id="'+e.id+'">Borrar</button></div>'
+    h+='<div class="evcard'+(e.hecho?' exhecho':'')+'"><div class="line"><label class="chk hecho-chk" title="Marcalo cuando lo hayas resuelto"><input type="checkbox" data-act="exHecho" data-id="'+e.id+'"'+(e.hecho?' checked':'')+'>Ya lo hice'+(e.hecho&&e.hechoFecha?' <span class="muted">('+fechaCorta(e.hechoFecha)+')</span>':'')+'</label><span class="chip acc">'+(fin?'Final':TIPO_EX[e.tipo])+'</span><b class="num">'+esc(e.anio||"")+'</b><span class="t" style="flex:1 1 140px">'+esc(e.titulo||"")+'</span>'+(e.assetId?'<button class="btn sm" data-act="verArchivo" data-asset="'+esc(e.assetId)+'" data-title="'+esc(e.titulo||TIPO_EX[e.tipo])+'">Abrir</button>':href?'<a class="btn sm" href="'+esc(href)+'" target="_blank" rel="noopener">Abrir link</a>':'')+'<button class="btn ghost sm" data-act="borrarExamen" data-id="'+e.id+'">Borrar</button></div>'
       +'<div class="small">'+((e.temaIds||[]).length?(e.temaIds.map(id=>esc(temaNombre(m,id))).filter(Boolean).join(" · ")):'<span class="muted">Sin temas marcados: no cuenta para la frecuencia.</span>')+'</div>'
       +(e.notas?'<div class="small muted" style="white-space:pre-wrap">'+esc(e.notas)+'</div>':'')
       +'<details><summary class="small" style="cursor:pointer">Cambiar temas</summary><div class="temas-pick" style="margin-top:6px">'+m.temas.map(t=>'<label class="chk"><input type="checkbox" data-act="exTema" data-id="'+e.id+'" data-t="'+t.id+'" '+((e.temaIds||[]).includes(t.id)?"checked":"")+'>'+esc(t.nombre)+'</label>').join("")+'</div></details></div>';
@@ -1390,7 +1395,7 @@ function iniciarSimulacro(m,modo,dur){
   const cand=(m.examenes||[]).filter(e=>e.assetId&&esFinalEx(e)===(modo==="final"));
   if(!cand.length){toast("Subí al menos un examen con archivo para hacer un simulacro.");return}
   if(timer){toast("Ya tenés una sesión en curso: terminala o descartala primero.");return}
-  const hechos=new Set((m.simulacros||[]).map(x=>x.exId)),nuevos=cand.filter(e=>!hechos.has(e.id)),pool=nuevos.length?nuevos:cand,e=pool[Math.floor(Math.random()*pool.length)];
+  const hechos=new Set((m.simulacros||[]).map(x=>x.exId)),nuevos=cand.filter(e=>!hechos.has(e.id)&&!e.hecho),pool=nuevos.length?nuevos:cand,e=pool[Math.floor(Math.random()*pool.length)];
   timerStart(m.id,dur,"sim:"+e.id);verArchivo(e.assetId,"Simulacro · "+(e.titulo||TIPO_EX[e.tipo]));
 }
 function abrirAutoeval(mid,exId,min){
@@ -1552,6 +1557,7 @@ document.addEventListener("click",e=>{
     case "timerPausa":timerPausa();break;
     case "timerFin":timerFin(false);break;
     case "timerCancel":confirmar("¿Descartar esta sesión sin registrar las horas?","Descartar",()=>{timerClear();toast("Sesión descartada")});break;
+    case "exHecho":{const e=m.examenes.find(x=>x.id===id);if(!e)break;e.hecho=el.checked;e.hechoFecha=el.checked?hoyISO():null;commit(el.checked?"Listo, marcado como hecho":"Lo desmarqué");break}
     case "exTema":{const e=m.examenes.find(x=>x.id===id),t=el.dataset.t;e.temaIds=e.temaIds||[];if(el.checked)e.temaIds.push(t);else e.temaIds=e.temaIds.filter(x=>x!==t);commit();break}
     case "borrarExamen":{const e=m.examenes.find(x=>x.id===id);confirmar(e.assetId?"¿Borrar este examen? El archivo se elimina para siempre.":"¿Borrar este examen?","Borrar",async()=>{if(e.assetId&&store.assets){try{await store.assets.delete(e.assetId)}catch(err){console.error(err)}}m.examenes=m.examenes.filter(x=>x.id!==id);commit("Examen borrado")});break}
     case "okSugeridos":m.temasSugeridos=false;commit();break;
