@@ -223,6 +223,16 @@ a.mcard:hover{border-color:var(--line-strong);transform:translateY(-1px)}
 .evcard.exhecho>:not(.line){opacity:.6}
 .evcard.exhecho .line>:not(.hecho-chk):not(.btn){opacity:.6}
 .hecho-chk{font-weight:600;white-space:nowrap}
+.intento{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:4px}
+.ejs{display:flex;flex-wrap:wrap;gap:4px 14px}
+.ejs .ej.lento{color:var(--warn)}
+.ejs .ej.lento b::after{content:" · el más lento";font-weight:400;font-size:.85em}
+.timerbar .tb-lap{display:flex;flex-direction:column;line-height:1.2;font-size:.92rem;min-width:84px}
+.timerbar .tb-lap .num{font-family:var(--f-mono)}
+.timerbar .tb-lap small{opacity:.65;font-size:.75rem}
+body.has-timer .toast{bottom:calc(var(--tbh,76px) + 14px)}
+.timerbar .btn[data-act=lapInc],.timerbar .btn[data-act=lapEj]{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (max-width:600px){.timerbar .tb-name{flex:1 1 auto}.timerbar .btn[data-act=lapInc],.timerbar .btn[data-act=lapEj]{order:1;flex:1 1 40%;min-height:44px}.timerbar .wrap>.btn:not([data-act=lapInc]):not([data-act=lapEj]){order:2;flex:1 1 auto;padding-inline:8px}}
 .crono-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .crono-row .small{flex:1 1 220px}
 .temas-pick{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.86rem}
@@ -522,7 +532,8 @@ function sanear(s){
     (m.tareas||[]).forEach(t=>{t.id=idok(t.id);t.min=num(t.min)||30;t.temaId=idok(t.temaId)});
     (m.evaluaciones||[]).forEach(e=>{e.id=idok(e.id);e.nota=num(e.nota);e.fecha=fecha(e.fecha);e.temaIds=(e.temaIds||[]).map(idok)});
     (m.apuntes||[]).forEach(a=>{a.id=idok(a.id);if(a.url!=null)a.url=link(a.url);if(a.assetId)a.assetId=idok(a.assetId)});
-    (m.examenes||[]).forEach(e=>{e.id=idok(e.id);if(e.url!=null)e.url=link(e.url);if(e.assetId)e.assetId=idok(e.assetId);const n=num(e.anio);e.anio=n==null?"":n;e.hecho=!!e.hecho;e.hechoFecha=e.hecho?fecha(e.hechoFecha):null;e.minHecho=e.hecho?num(e.minHecho):null;e.temaIds=(e.temaIds||[]).map(idok)});
+    (m.examenes||[]).forEach(e=>{e.id=idok(e.id);if(e.url!=null)e.url=link(e.url);if(e.assetId)e.assetId=idok(e.assetId);const n=num(e.anio);e.anio=n==null?"":n;e.hecho=!!e.hecho;e.hechoFecha=e.hecho?fecha(e.hechoFecha):null;e.minHecho=e.hecho?num(e.minHecho):null;
+      e.intentos=(Array.isArray(e.intentos)?e.intentos:[]).map(it=>({fecha:fecha(it&&it.fecha)||"",min:num(it&&it.min)||0,ejs:(Array.isArray(it&&it.ejs)?it.ejs:[]).map(g=>({ej:Math.max(1,Math.round(num(g&&g.ej)||1)),s:Math.max(0,num(g&&g.s)||0),partes:(Array.isArray(g&&g.partes)?g.partes:[]).map(p=>({inc:/^[a-z]$/.test(p&&p.inc)?p.inc:"a",s:Math.max(0,num(p&&p.s)||0)}))}))})).filter(it=>it.fecha&&it.ejs.length);e.temaIds=(e.temaIds||[]).map(idok)});
     (m.ejercicios||[]).forEach(x=>{x.id=idok(x.id);x.temaId=idok(x.temaId)});
     (m.sesiones||[]).forEach(x=>{x.id=idok(x.id);x.min=num(x.min)||0;x.fecha=fecha(x.fecha)});
     (m.fichas||[]).forEach(f=>{f.id=idok(f.id);f.temaId=idok(f.temaId)});
@@ -924,6 +935,7 @@ function tExamenes(m,modo){
     h+='<div class="evcard'+(e.hecho?' exhecho':'')+'"><div class="line"><label class="chk hecho-chk" title="Marcalo cuando lo hayas resuelto"><input type="checkbox" data-act="exHecho" data-id="'+e.id+'"'+(e.hecho?' checked':'')+'>Ya lo hice'+(e.hecho&&e.hechoFecha?' <span class="muted">('+fechaCorta(e.hechoFecha)+(e.minHecho?' · '+hm(e.minHecho):'')+')</span>':'')+'</label><span class="chip acc">'+(fin?'Final':TIPO_EX[e.tipo])+'</span><b class="num">'+esc(e.anio||"")+'</b><span class="t" style="flex:1 1 140px">'+esc(e.titulo||"")+'</span>'+(e.assetId?'<button class="btn sm" data-act="verArchivo" data-asset="'+esc(e.assetId)+'" data-title="'+esc(e.titulo||TIPO_EX[e.tipo])+'">Abrir</button>':href?'<a class="btn sm" href="'+esc(href)+'" target="_blank" rel="noopener">Abrir link</a>':'')+'<button class="btn sm" data-act="cronoEx" data-id="'+e.id+'" title="Cronometrá cuánto tardás; al terminar se suma a tus horas y queda tildado">Hacerlo con cronómetro</button><button class="btn ghost sm" data-act="borrarExamen" data-id="'+e.id+'">Borrar</button></div>'
       +'<div class="small">'+((e.temaIds||[]).length?(e.temaIds.map(id=>esc(temaNombre(m,id))).filter(Boolean).join(" · ")):'<span class="muted">Sin temas marcados: no cuenta para la frecuencia.</span>')+'</div>'
       +(e.notas?'<div class="small muted" style="white-space:pre-wrap">'+esc(e.notas)+'</div>':'')
+      +((e.intentos||[]).length?(()=>{const its=e.intentos,u=its[its.length-1];return '<div class="intento"><div class="small"><b>Tus tiempos</b> <span class="muted">· '+fechaCorta(u.fecha)+' · total '+hm(u.min)+'</span></div><div class="ejs small">'+htmlIntento(u)+'</div>'+(its.length>1?'<details><summary class="small" style="cursor:pointer">Intentos anteriores ('+(its.length-1)+')</summary>'+its.slice(0,-1).reverse().map(it=>'<div class="small" style="margin-top:6px"><span class="muted">'+fechaCorta(it.fecha)+' · total '+hm(it.min)+'</span><div class="ejs">'+htmlIntento(it)+'</div></div>').join("")+'</details>':'')+'</div>'})():'')
       +'<details><summary class="small" style="cursor:pointer">Cambiar temas</summary><div class="temas-pick" style="margin-top:6px">'+m.temas.map(t=>'<label class="chk"><input type="checkbox" data-act="exTema" data-id="'+e.id+'" data-t="'+t.id+'" '+((e.temaIds||[]).includes(t.id)?"checked":"")+'>'+esc(t.nombre)+'</label>').join("")+'</div></details></div>';
   });
   return h+'</div>';
@@ -1435,16 +1447,44 @@ function timerStart(mid,min,key){
 }
 function timerPausa(){if(!timer)return;if(timer.running){timer.acc+=Date.now()-timer.start;timer.running=false;soltarWake()}else{timer.start=Date.now();timer.running=true;pedirWake()}tGuardar();timerUI()}
 function timerClear(){timer=null;tGuardar();soltarWake();timerUI();render()}
+/* ---------- vueltas: tiempo por inciso y por ejercicio ----------
+   timer.laps = [{ej,inc,end}] con end = ms acumulados (sin pausas) al cerrar ese inciso; timer.ej / timer.inc = el que está en curso */
+const mmss=sg=>{sg=Math.max(0,Math.round(sg));const h=Math.floor(sg/3600),m=Math.floor(sg/60)%60;return (h?h+":"+pad(m):m)+":"+pad(sg%60)};
+const lapsVuelta=()=>!!timer&&(timer.min===0||/^(sim|ex):/.test(String(timer.key)));
+function lapCerrar(nuevoEj){
+  if(!timer)return;timer.laps=timer.laps||[];timer.ej=timer.ej||1;timer.inc=timer.inc||"a";
+  const el=tElapsed(),prev=timer.laps.length?timer.laps[timer.laps.length-1].end:0;
+  if(el-prev<1000){toast("Esperá un segundo antes de marcar.");return}
+  timer.laps.push({ej:timer.ej,inc:timer.inc,end:el});
+  if(nuevoEj){timer.ej++;timer.inc="a"}else timer.inc=String.fromCharCode(Math.min(122,timer.inc.charCodeAt(0)+1));
+  tGuardar();timerUI();
+}
+function lapDeshacer(){if(!timer||!(timer.laps||[]).length)return;const l=timer.laps.pop();timer.ej=l.ej;timer.inc=l.inc;tGuardar();timerUI();toast("Marca deshecha")}
+/* de las marcas a [{ej,s,partes:[{inc,s}]}] (segundos) */
+function agruparLaps(laps){
+  const out=[];let prev=0;(laps||[]).forEach(l=>{const sg=(l.end-prev)/1000;prev=l.end;let g=out.find(x=>x.ej===l.ej);if(!g){g={ej:l.ej,s:0,partes:[]};out.push(g)}g.s+=sg;g.partes.push({inc:l.inc,s:sg})});
+  return out.sort((a,b)=>a.ej-b.ej);
+}
+function textoLaps(grupos){return grupos.map(g=>"Ej. "+g.ej+" "+mmss(g.s)+(g.partes.length>1?" ("+g.partes.map(p=>p.inc+" "+mmss(p.s)).join(" · ")+")":"")).join(" · ")}
+function htmlIntento(it){
+  const gs=it.ejs||[],prom=gs.length?gs.reduce((a,g)=>a+g.s,0)/gs.length:0,lento=gs.length>1?gs.reduce((a,g)=>g.s>a.s?g:a,gs[0]):null;
+  return gs.map(g=>{const alto=lento===g&&g.s>prom*1.25;return '<span class="ej'+(alto?' lento':'')+'"'+(alto?' title="El que más tiempo te llevó"':'')+'><b>Ej. '+g.ej+'</b> <span class="num">'+mmss(g.s)+'</span>'+(g.partes.length>1?' <span class="muted">('+g.partes.map(p=>esc(p.inc)+' <span class="num">'+mmss(p.s)+'</span>').join(' · ')+')</span>':'')+'</span>'}).join("");
+}
 function timerFin(auto){
   if(!timer)return;const m=state&&getM(timer.mid);
   const min=auto?timer.min:Math.round(tElapsed()/60000);const key=timer.key;
+  let laps=null;if((timer.laps||[]).length){laps=timer.laps.slice();const el=auto?timer.min*60000:tElapsed(),prev=laps[laps.length-1].end;if(el-prev>=1000)laps.push({ej:timer.ej||1,inc:timer.inc||"a",end:el})}
+  const ejs=laps?agruparLaps(laps):null;
   timer=null;tGuardar();soltarWake();
   if(!m){timerUI();return}
   if(min<5){timerUI();render();toast("Sesión de menos de 5 minutos: no se registró.");return}
   const sim=!!(key&&String(key).startsWith("sim:")),arr=!!(key&&String(key).startsWith("arr|")),exk=!!(key&&String(key).startsWith("ex:"));
   const be=exk?buscarExamen(String(key).slice(3)):null;
   if(be){be.e.hecho=true;be.e.hechoFecha=hoyISO();be.e.minHecho=min}
+  const beI=be||(sim?buscarExamen(String(key).slice(4)):null);
+  if(beI&&ejs){beI.e.intentos=beI.e.intentos||[];beI.e.intentos.push({fecha:hoyISO(),min,ejs:ejs.map(g=>({ej:g.ej,s:Math.round(g.s),partes:g.partes.map(p=>({inc:p.inc,s:Math.round(p.s)}))}))})}
   m.sesiones.push({id:uid(),fecha:hoyISO(),min,slot:(sim||arr||exk||key==="libre")?"":key,nota:sim?"Simulacro":arr?"Arranque de 10 minutos":be?"Parcial viejo: "+(be.e.titulo||TIPO_EX[be.e.tipo]):key==="libre"?"Cronómetro":"Sesión con temporizador"});
+  if(ejs&&!beI)m.sesiones[m.sesiones.length-1].nota+=" · "+textoLaps(ejs);
   timerUI();commit((auto?"¡Tiempo! ":"")+"Registraste "+hm(min)+" de "+m.nombre);
   if(sim)abrirAutoeval(m.id,String(key).slice(4),min);
   if(arr)abrirSeguir(m.id,String(key));
@@ -1454,8 +1494,10 @@ function timerUI(){
   if(!timer||!state){bar.hidden=true;document.body.classList.remove("has-timer");clearInterval(tick);tick=null;return}
   const m=getM(timer.mid);if(!m){bar.hidden=true;return}
   bar.hidden=false;document.body.classList.add("has-timer");
-  bar.innerHTML='<div class="tb-prog" id="tb-prog"></div><div class="wrap"><div class="tb-name">'+esc(m.nombre)+'<small id="tb-sub"></small></div><span class="tb-time" id="tb-time" aria-live="off"></span>'+(/^(sim|ex):/.test(String(timer.key))?'<button class="btn sm" data-act="simVer">Ver examen</button>':'')+'<button class="btn sm" data-act="timerPausa">'+(timer.running?"Pausar":"Seguir")+'</button><button class="btn sm" data-act="timerFin">Terminar y registrar</button><button class="btn sm" data-act="timerCancel">Descartar</button></div>';
+  bar.innerHTML='<div class="tb-prog" id="tb-prog"></div><div class="wrap"><div class="tb-name">'+esc(m.nombre)+'<small id="tb-sub"></small></div><span class="tb-time" id="tb-time" aria-live="off"></span>'+(/^(sim|ex):/.test(String(timer.key))?'<button class="btn sm" data-act="simVer">Ver examen</button>':'')+(lapsVuelta()?'<span class="tb-lap" id="tb-lap"></span><button class="btn sm" data-act="lapInc" title="Cierra este inciso y pasa al siguiente (a → b)">Inciso listo</button><button class="btn sm" data-act="lapEj" title="Cierra este inciso y pasa al ejercicio siguiente">Ejercicio listo</button>'+((timer.laps||[]).length?'<button class="btn sm" data-act="lapUndo" title="Deshacer la última marca" aria-label="Deshacer la última marca">Deshacer</button>':''):'')+'<button class="btn sm" data-act="timerPausa">'+(timer.running?"Pausar":"Seguir")+'</button><button class="btn sm" data-act="timerFin">Terminar y registrar</button><button class="btn sm" data-act="timerCancel">Descartar</button></div>';
   const upd=()=>{if(!timer)return;const el=tElapsed(),tot=timer.min*60000;
+    const lp=$("#tb-lap");if(lp){const L=timer.laps||[],prev=L.length?L[L.length-1].end:0,ult=L.length?L[L.length-1]:null,pv=L.length>1?L[L.length-2].end:0;
+      lp.innerHTML='<b>Ej. '+(timer.ej||1)+' '+(timer.inc||"a")+'</b> <span class="num">'+mmss((el-prev)/1000)+'</span>'+(ult?'<small>anterior: '+ult.ej+' '+ult.inc+' · '+mmss((ult.end-pv)/1000)+'</small>':'')}
     if(!timer.min){const sg=Math.floor(el/1000),hh=Math.floor(sg/3600);$("#tb-time").textContent=(hh?hh+":":"")+pad(Math.floor(sg/60)%60)+":"+pad(sg%60);
       const be=String(timer.key).startsWith("ex:")?buscarExamen(String(timer.key).slice(3)):null;
       $("#tb-sub").textContent=(timer.running?(be?"Parcial viejo · "+(be.e.titulo||TIPO_EX[be.e.tipo]):"Cronómetro"):"En pausa")+" · se suma a tus horas al terminar";
@@ -1575,6 +1617,9 @@ document.addEventListener("click",e=>{
     case "cronoEx":{const e=m.examenes.find(x=>x.id===id);if(!e)break;if(timer){toast("Ya tenés una sesión en curso: terminala o descartala primero.");break}timerStart(m.id,0,"ex:"+e.id);if(e.assetId)verArchivo(e.assetId,(e.titulo||TIPO_EX[e.tipo]));else if(e.url)window.open(e.url,"_blank","noopener");break}
     case "timerStart":timerStart(el.dataset.mid,+el.dataset.min,el.dataset.key);break;
     case "timerPausa":timerPausa();break;
+    case "lapInc":lapCerrar(false);break;
+    case "lapEj":lapCerrar(true);break;
+    case "lapUndo":lapDeshacer();break;
     case "timerFin":timerFin(false);break;
     case "timerCancel":confirmar("¿Descartar esta sesión sin registrar las horas?","Descartar",()=>{timerClear();toast("Sesión descartada")});break;
     case "exHecho":{const e=m.examenes.find(x=>x.id===id);if(!e)break;e.hecho=el.checked;e.hechoFecha=el.checked?hoyISO():null;if(!el.checked)e.minHecho=null;commit(el.checked?"Listo, marcado como hecho":"Lo desmarqué");break}
