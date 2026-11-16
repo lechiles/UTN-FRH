@@ -223,6 +223,8 @@ a.mcard:hover{border-color:var(--line-strong);transform:translateY(-1px)}
 .evcard.exhecho>:not(.line){opacity:.6}
 .evcard.exhecho .line>:not(.hecho-chk):not(.btn){opacity:.6}
 .hecho-chk{font-weight:600;white-space:nowrap}
+.crono-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.crono-row .small{flex:1 1 220px}
 .temas-pick{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.86rem}
 details.box{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;background:var(--surface-2)}
 details.box summary{cursor:pointer;font-weight:600}
@@ -513,7 +515,7 @@ function sanear(s){
     (m.tareas||[]).forEach(t=>{t.id=idok(t.id);t.min=num(t.min)||30;t.temaId=idok(t.temaId)});
     (m.evaluaciones||[]).forEach(e=>{e.id=idok(e.id);e.nota=num(e.nota);e.fecha=fecha(e.fecha);e.temaIds=(e.temaIds||[]).map(idok)});
     (m.apuntes||[]).forEach(a=>{a.id=idok(a.id);if(a.url!=null)a.url=link(a.url);if(a.assetId)a.assetId=idok(a.assetId)});
-    (m.examenes||[]).forEach(e=>{e.id=idok(e.id);if(e.url!=null)e.url=link(e.url);if(e.assetId)e.assetId=idok(e.assetId);const n=num(e.anio);e.anio=n==null?"":n;e.hecho=!!e.hecho;e.hechoFecha=e.hecho?fecha(e.hechoFecha):null;e.temaIds=(e.temaIds||[]).map(idok)});
+    (m.examenes||[]).forEach(e=>{e.id=idok(e.id);if(e.url!=null)e.url=link(e.url);if(e.assetId)e.assetId=idok(e.assetId);const n=num(e.anio);e.anio=n==null?"":n;e.hecho=!!e.hecho;e.hechoFecha=e.hecho?fecha(e.hechoFecha):null;e.minHecho=e.hecho?num(e.minHecho):null;e.temaIds=(e.temaIds||[]).map(idok)});
     (m.ejercicios||[]).forEach(x=>{x.id=idok(x.id);x.temaId=idok(x.temaId)});
     (m.sesiones||[]).forEach(x=>{x.id=idok(x.id);x.min=num(x.min)||0;x.fecha=fecha(x.fecha)});
     (m.fichas||[]).forEach(f=>{f.id=idok(f.id);f.temaId=idok(f.temaId)});
@@ -785,7 +787,7 @@ function heroArranque(plan){
 }
 function formHoras(mid){
   const opts=state.materias.map(m=>'<option value="'+m.id+'"'+(m.id===mid?" selected":"")+'>'+esc(m.nombre)+'</option>').join("");
-  return '<form class="form" data-form="horas">'+(mid?'<input type="hidden" name="mid" value="'+mid+'">':'<select name="mid" id="h-mid" aria-label="Materia">'+opts+'</select>')+'<input type="date" name="fecha" id="h-fecha'+(mid||"")+'" value="'+hoyISO()+'" aria-label="Fecha"><input type="number" name="min" id="h-min'+(mid||"")+'" min="5" step="5" value="45" style="width:90px" aria-label="Minutos"> <span class="small muted">min</span><input type="text" name="nota" id="h-nota'+(mid||"")+'" class="grow" placeholder="Qué hiciste (opcional)"><button class="btn primary" type="submit">Registrar</button></form>';
+  return '<div class="crono-row"><button class="btn primary" type="button" data-act="cronoLibre"'+(mid?' data-mid="'+mid+'"':'')+'>Empezar cronómetro</button><span class="small muted">Arrancalo cuando te sentás a estudiar y frenalo al terminar: el tiempo se suma solo.'+(mid?'':' Usa la materia elegida abajo.')+'</span></div><div class="small muted" style="margin:10px 0 6px">O cargalo a mano:</div><form class="form" data-form="horas">'+(mid?'<input type="hidden" name="mid" value="'+mid+'">':'<select name="mid" id="h-mid" aria-label="Materia">'+opts+'</select>')+'<input type="date" name="fecha" id="h-fecha'+(mid||"")+'" value="'+hoyISO()+'" aria-label="Fecha"><input type="number" name="min" id="h-min'+(mid||"")+'" min="5" step="5" value="45" style="width:90px" aria-label="Minutos"> <span class="small muted">min</span><input type="text" name="nota" id="h-nota'+(mid||"")+'" class="grow" placeholder="Qué hiciste (opcional)"><button class="btn primary" type="submit">Registrar</button></form>';
 }
 function diaSlots(dia,conHecho){
   if(!dia.ses.length)return '<div class="empty">'+(dia.min?"Menos de 20 minutos disponibles: aprovechá para repasar algo corto.":"Día sin tiempo de estudio asignado.")+(dia.evs.length?"":"")+'</div>';
@@ -857,7 +859,7 @@ function vMateria(){
   h+='<div><a href="#'+(m.tipo==="final"?"finales":"cursada")+'" class="small">← '+(m.tipo==="final"?"Finales":"Materias")+'</a></div>';
   h+='<div class="mhead"><div class="line" style="justify-content:space-between"><div><div class="eyebrow">'+(m.tipo==="final"?"Final pendiente":"Cursada")+'</div><h1>'+esc(m.nombre)+'</h1></div>'+nivelChip(pr.nivel)+'</div>';
   h+='<div class="small muted">'+esc(pr.razon)+'</div>'+progBar(m);
-  h+='<div class="line small"><span class="chip ok">'+p.d+' dominados</span><span class="chip warn">'+p.c+' en curso</span><span class="chip crit">'+p.p+' pendientes</span><span class="muted">· '+horas(minTotal(m))+' estudiadas · '+horas(minSemana(m))+' esta semana</span></div>';
+  h+='<div class="line small"><span class="chip ok">'+p.d+' dominados</span><span class="chip warn">'+p.c+' en curso</span><span class="chip crit">'+p.p+' pendientes</span><span class="muted">· '+horas(minTotal(m))+' estudiadas · '+horas(minSemana(m))+' esta semana</span><button class="btn sm" data-act="cronoLibre" data-mid="'+m.id+'" style="margin-left:auto">Empezar cronómetro</button></div>';
   h+='<details class="box"><summary>Datos de la materia</summary><div class="form">'
     +'<label class="f">Nombre<input type="text" id="m-nombre" value="'+esc(m.nombre)+'" data-mfield="nombre"></label>'
     +'<label class="f">Condición<select id="m-cond" data-mfield="condicion">'+Object.entries(COND).map(([k,v])=>'<option value="'+k+'"'+(m.condicion===k?" selected":"")+'>'+v+'</option>').join("")+'</select></label>'
@@ -912,7 +914,7 @@ function tExamenes(m,modo){
   h+='<div style="display:flex;flex-direction:column;gap:10px">';
   ex.slice().sort((x,y)=>(+y.anio||0)-(+x.anio||0)).forEach(e=>{
     const href=e.url;
-    h+='<div class="evcard'+(e.hecho?' exhecho':'')+'"><div class="line"><label class="chk hecho-chk" title="Marcalo cuando lo hayas resuelto"><input type="checkbox" data-act="exHecho" data-id="'+e.id+'"'+(e.hecho?' checked':'')+'>Ya lo hice'+(e.hecho&&e.hechoFecha?' <span class="muted">('+fechaCorta(e.hechoFecha)+')</span>':'')+'</label><span class="chip acc">'+(fin?'Final':TIPO_EX[e.tipo])+'</span><b class="num">'+esc(e.anio||"")+'</b><span class="t" style="flex:1 1 140px">'+esc(e.titulo||"")+'</span>'+(e.assetId?'<button class="btn sm" data-act="verArchivo" data-asset="'+esc(e.assetId)+'" data-title="'+esc(e.titulo||TIPO_EX[e.tipo])+'">Abrir</button>':href?'<a class="btn sm" href="'+esc(href)+'" target="_blank" rel="noopener">Abrir link</a>':'')+'<button class="btn ghost sm" data-act="borrarExamen" data-id="'+e.id+'">Borrar</button></div>'
+    h+='<div class="evcard'+(e.hecho?' exhecho':'')+'"><div class="line"><label class="chk hecho-chk" title="Marcalo cuando lo hayas resuelto"><input type="checkbox" data-act="exHecho" data-id="'+e.id+'"'+(e.hecho?' checked':'')+'>Ya lo hice'+(e.hecho&&e.hechoFecha?' <span class="muted">('+fechaCorta(e.hechoFecha)+(e.minHecho?' · '+hm(e.minHecho):'')+')</span>':'')+'</label><span class="chip acc">'+(fin?'Final':TIPO_EX[e.tipo])+'</span><b class="num">'+esc(e.anio||"")+'</b><span class="t" style="flex:1 1 140px">'+esc(e.titulo||"")+'</span>'+(e.assetId?'<button class="btn sm" data-act="verArchivo" data-asset="'+esc(e.assetId)+'" data-title="'+esc(e.titulo||TIPO_EX[e.tipo])+'">Abrir</button>':href?'<a class="btn sm" href="'+esc(href)+'" target="_blank" rel="noopener">Abrir link</a>':'')+'<button class="btn sm" data-act="cronoEx" data-id="'+e.id+'" title="Cronometrá cuánto tardás; al terminar se suma a tus horas y queda tildado">Hacerlo con cronómetro</button><button class="btn ghost sm" data-act="borrarExamen" data-id="'+e.id+'">Borrar</button></div>'
       +'<div class="small">'+((e.temaIds||[]).length?(e.temaIds.map(id=>esc(temaNombre(m,id))).filter(Boolean).join(" · ")):'<span class="muted">Sin temas marcados: no cuenta para la frecuencia.</span>')+'</div>'
       +(e.notas?'<div class="small muted" style="white-space:pre-wrap">'+esc(e.notas)+'</div>':'')
       +'<details><summary class="small" style="cursor:pointer">Cambiar temas</summary><div class="temas-pick" style="margin-top:6px">'+m.temas.map(t=>'<label class="chk"><input type="checkbox" data-act="exTema" data-id="'+e.id+'" data-t="'+t.id+'" '+((e.temaIds||[]).includes(t.id)?"checked":"")+'>'+esc(t.nombre)+'</label>').join("")+'</div></details></div>';
@@ -1432,8 +1434,10 @@ function timerFin(auto){
   timer=null;tGuardar();soltarWake();
   if(!m){timerUI();return}
   if(min<5){timerUI();render();toast("Sesión de menos de 5 minutos: no se registró.");return}
-  const sim=!!(key&&String(key).startsWith("sim:")),arr=!!(key&&String(key).startsWith("arr|"));
-  m.sesiones.push({id:uid(),fecha:hoyISO(),min,slot:(sim||arr)?"":key,nota:sim?"Simulacro":arr?"Arranque de 10 minutos":"Sesión con temporizador"});
+  const sim=!!(key&&String(key).startsWith("sim:")),arr=!!(key&&String(key).startsWith("arr|")),exk=!!(key&&String(key).startsWith("ex:"));
+  const be=exk?buscarExamen(String(key).slice(3)):null;
+  if(be){be.e.hecho=true;be.e.hechoFecha=hoyISO();be.e.minHecho=min}
+  m.sesiones.push({id:uid(),fecha:hoyISO(),min,slot:(sim||arr||exk||key==="libre")?"":key,nota:sim?"Simulacro":arr?"Arranque de 10 minutos":be?"Parcial viejo: "+(be.e.titulo||TIPO_EX[be.e.tipo]):key==="libre"?"Cronómetro":"Sesión con temporizador"});
   timerUI();commit((auto?"¡Tiempo! ":"")+"Registraste "+hm(min)+" de "+m.nombre);
   if(sim)abrirAutoeval(m.id,String(key).slice(4),min);
   if(arr)abrirSeguir(m.id,String(key));
@@ -1443,8 +1447,12 @@ function timerUI(){
   if(!timer||!state){bar.hidden=true;document.body.classList.remove("has-timer");clearInterval(tick);tick=null;return}
   const m=getM(timer.mid);if(!m){bar.hidden=true;return}
   bar.hidden=false;document.body.classList.add("has-timer");
-  bar.innerHTML='<div class="tb-prog" id="tb-prog"></div><div class="wrap"><div class="tb-name">'+esc(m.nombre)+'<small id="tb-sub"></small></div><span class="tb-time" id="tb-time" aria-live="off"></span>'+(String(timer.key).startsWith("sim:")?'<button class="btn sm" data-act="simVer">Ver examen</button>':'')+'<button class="btn sm" data-act="timerPausa">'+(timer.running?"Pausar":"Seguir")+'</button><button class="btn sm" data-act="timerFin">Terminar y registrar</button><button class="btn sm" data-act="timerCancel">Descartar</button></div>';
+  bar.innerHTML='<div class="tb-prog" id="tb-prog"></div><div class="wrap"><div class="tb-name">'+esc(m.nombre)+'<small id="tb-sub"></small></div><span class="tb-time" id="tb-time" aria-live="off"></span>'+(/^(sim|ex):/.test(String(timer.key))?'<button class="btn sm" data-act="simVer">Ver examen</button>':'')+'<button class="btn sm" data-act="timerPausa">'+(timer.running?"Pausar":"Seguir")+'</button><button class="btn sm" data-act="timerFin">Terminar y registrar</button><button class="btn sm" data-act="timerCancel">Descartar</button></div>';
   const upd=()=>{if(!timer)return;const el=tElapsed(),tot=timer.min*60000;
+    if(!timer.min){const sg=Math.floor(el/1000),hh=Math.floor(sg/3600);$("#tb-time").textContent=(hh?hh+":":"")+pad(Math.floor(sg/60)%60)+":"+pad(sg%60);
+      const be=String(timer.key).startsWith("ex:")?buscarExamen(String(timer.key).slice(3)):null;
+      $("#tb-sub").textContent=(timer.running?(be?"Parcial viejo · "+(be.e.titulo||TIPO_EX[be.e.tipo]):"Cronómetro"):"En pausa")+" · se suma a tus horas al terminar";
+      $("#tb-prog").style.width="0";return}
     if(el>=tot){beep();timerFin(true);return}
     const r=Math.ceil((tot-el)/1000);$("#tb-time").textContent=pad(Math.floor(r/60))+":"+pad(r%60);
     $("#tb-sub").textContent=(timer.running?(String(timer.key).startsWith("sim:")?"Simulacro de ":String(timer.key).startsWith("arr|")?"Arranque · ":"Sesión de ")+hm(timer.min):"En pausa")+" · llevás "+hm(Math.floor(el/60000));
@@ -1544,7 +1552,7 @@ document.addEventListener("click",e=>{
     case "asis":{const mm=getM(el.dataset.mid);if(!mm)break;const k=el.dataset.k;mm.asist[k]=mm.asist[k]===el.dataset.v?undefined:el.dataset.v;if(!mm.asist[k])delete mm.asist[k];commit();break}
     case "asisTodas":{const r=asistencia(m);let n=0;r.pas.forEach(x=>{if(!m.asist[x.key]){m.asist[x.key]="p";n++}});commit(n+" clases marcadas como presente");break}
     case "simulacro":{const dur=+(($("#sim-dur-"+el.dataset.modo)||{}).value||120);iniciarSimulacro(m,el.dataset.modo,dur);break}
-    case "simVer":{if(!timer)break;const be=buscarExamen(String(timer.key).slice(4));if(be)verArchivo(be.e.assetId,"Simulacro · "+(be.e.titulo||TIPO_EX[be.e.tipo]));break}
+    case "simVer":{if(!timer)break;const be=buscarExamen(String(timer.key).replace(/^(sim|ex):/,""));if(be)verArchivo(be.e.assetId,"Simulacro · "+(be.e.titulo||TIPO_EX[be.e.tipo]));break}
     case "borrarMesa":state.config.mesas=state.config.mesas.filter(x=>x.id!==id);commit("Turno borrado");break;
     case "borrarClase":state.config.horario=state.config.horario.filter(x=>x.id!==id);commit("Clase borrada: el plan se reajustó");break;
     case "borrarHist":state.historial=state.historial.filter(x=>x.id!==id);commit("Registro borrado");break;
@@ -1553,11 +1561,13 @@ document.addEventListener("click",e=>{
     case "cerrarAnio":confirmar("¿Cerrar el año lectivo "+anioLectivo()+" con estos resultados? Las materias promocionadas o libres se archivan y a las regulares se les borran los parciales y recuperatorios pendientes.","Cerrar el año",aplicarCierre);break;
     case "simC":ui.simC=+el.dataset.v;render();break;
     case "verArchivo":verArchivo(el.dataset.asset,el.dataset.title);break;
+    case "cronoLibre":{const mid=el.dataset.mid||(($("#h-mid")||{}).value)||(state.materias[0]||{}).id;if(mid)timerStart(mid,0,"libre");break}
+    case "cronoEx":{const e=m.examenes.find(x=>x.id===id);if(!e)break;if(timer){toast("Ya tenés una sesión en curso: terminala o descartala primero.");break}timerStart(m.id,0,"ex:"+e.id);if(e.assetId)verArchivo(e.assetId,(e.titulo||TIPO_EX[e.tipo]));else if(e.url)window.open(e.url,"_blank","noopener");break}
     case "timerStart":timerStart(el.dataset.mid,+el.dataset.min,el.dataset.key);break;
     case "timerPausa":timerPausa();break;
     case "timerFin":timerFin(false);break;
     case "timerCancel":confirmar("¿Descartar esta sesión sin registrar las horas?","Descartar",()=>{timerClear();toast("Sesión descartada")});break;
-    case "exHecho":{const e=m.examenes.find(x=>x.id===id);if(!e)break;e.hecho=el.checked;e.hechoFecha=el.checked?hoyISO():null;commit(el.checked?"Listo, marcado como hecho":"Lo desmarqué");break}
+    case "exHecho":{const e=m.examenes.find(x=>x.id===id);if(!e)break;e.hecho=el.checked;e.hechoFecha=el.checked?hoyISO():null;if(!el.checked)e.minHecho=null;commit(el.checked?"Listo, marcado como hecho":"Lo desmarqué");break}
     case "exTema":{const e=m.examenes.find(x=>x.id===id),t=el.dataset.t;e.temaIds=e.temaIds||[];if(el.checked)e.temaIds.push(t);else e.temaIds=e.temaIds.filter(x=>x!==t);commit();break}
     case "borrarExamen":{const e=m.examenes.find(x=>x.id===id);confirmar(e.assetId?"¿Borrar este examen? El archivo se elimina para siempre.":"¿Borrar este examen?","Borrar",async()=>{if(e.assetId&&store.assets){try{await store.assets.delete(e.assetId)}catch(err){console.error(err)}}m.examenes=m.examenes.filter(x=>x.id!==id);commit("Examen borrado")});break}
     case "okSugeridos":m.temasSugeridos=false;commit();break;
