@@ -284,6 +284,13 @@ body.has-timer .main{padding-bottom:140px}
 .vbody.zoom img{max-width:none;width:180%}
 .vbody canvas{display:block;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);max-width:none}
 .vbody .empty{width:100%;max-width:520px}
+/* con el cronómetro andando, el visor deja lugar abajo y la barra queda arriba de todo, visible mientras hacés el parcial */
+body.has-timer .overlay.viewer{bottom:var(--tbh,76px)}
+body.has-timer .overlay.viewer .vbox{padding-bottom:0}
+body:has(.overlay.viewer) .timerbar{z-index:16;left:0;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+body:has(.overlay.viewer) .timerbar [data-act=simVer],body:has(.overlay.viewer) .timerbar .tb-name small{display:none}
+body:has(.overlay.viewer) .timerbar .wrap{padding-block:8px;gap:8px}
+@media (max-width:600px){body:has(.overlay.viewer) .timerbar .tb-name{flex:1 1 auto}body:has(.overlay.viewer) .timerbar .tb-time{font-size:1.25rem}body:has(.overlay.viewer) .timerbar .btn{padding-inline:10px}}
 
 /* fichas */
 .ficha{display:flex;flex-direction:column;gap:14px;min-height:220px}
@@ -1457,9 +1464,12 @@ function timerUI(){
     const r=Math.ceil((tot-el)/1000);$("#tb-time").textContent=pad(Math.floor(r/60))+":"+pad(r%60);
     $("#tb-sub").textContent=(timer.running?(String(timer.key).startsWith("sim:")?"Simulacro de ":String(timer.key).startsWith("arr|")?"Arranque · ":"Sesión de ")+hm(timer.min):"En pausa")+" · llevás "+hm(Math.floor(el/60000));
     $("#tb-prog").style.width=(el/tot*100)+"%"};
-  upd();clearInterval(tick);tick=setInterval(upd,1000);
+  upd();clearInterval(tick);tick=setInterval(upd,1000);medirBarra();
 }
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&timer&&timer.running)pedirWake()});
+/* alto real de la barra del cronómetro, para que el visor de archivos no quede tapado */
+function medirBarra(){const b=$("#timerbar");if(b&&!b.hidden)document.documentElement.style.setProperty("--tbh",b.offsetHeight+"px")}
+window.addEventListener("resize",medirBarra);
 /* visor de archivos: se abre dentro del sitio (una pestaña nueva no tiene acceso al archivo) */
 const PDFJS="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
 const SRI={"pdf.worker.min.js":"sha384-SnzOobpRMLXZ52iJvZm/C0fYw0OQemTXzTjIsdsfMcrCtCEe9qgzxTd3RSklO5x2","pdf.min.js":"sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e"};
@@ -1471,7 +1481,7 @@ function escVisor(e){if(e.key==="Escape")cerrarVisor()}
 async function verArchivo(id,titulo){
   const r=$("#modal-root");let url="";try{url=await archivoURL(id)}catch(e){url=""}
   r.innerHTML='<div class="overlay viewer"><div class="vbox" role="dialog" aria-modal="true" aria-label="'+esc(titulo)+'"><header><b>'+esc(titulo)+'</b><span class="small muted" id="v-info"></span><button class="btn sm" id="v-zoom" hidden>Ampliar</button><button class="btn sm" id="v-close">Cerrar</button></header><div class="vbody" id="v-body"><div class="loading">Abriendo…</div></div></div></div>';
-  visor={token:0,zoom:false,doc:null};const my=visor;
+  visor={token:0,zoom:false,doc:null};const my=visor;medirBarra();
   $("#v-close").onclick=cerrarVisor;$("#v-close").focus();document.addEventListener("keydown",escVisor);
   const body=$("#v-body"),info=$("#v-info"),zb=$("#v-zoom");
   const falla=t=>{if(visor===my)body.innerHTML='<div class="empty">'+t+'</div>'};
