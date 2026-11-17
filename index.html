@@ -545,6 +545,19 @@ function sanear(s){
   return s;
 }
 
+/* ---------- ajustes de datos que se aplican una sola vez (quedan anotados en config.ajustes) ---------- */
+const AJUSTES=[
+  {id:"2026-11-17-rec3-fis2",msg:"Recuperatorio 3.er parcial de Física II: quedó solo con los temas que entraron en el parcial",
+   fn(s){const m=s.materias.find(m=>m.id==="fis2");if(!m)return false;const r=m.evaluaciones.find(e=>e.id==="evdud8r");if(!r)return false;
+     if(!m.temas.some(t=>t.id==="tq-dilat")){const i=m.temas.findIndex(t=>t.id==="tq-calor");m.temas.splice(i<0?m.temas.length:i,0,{id:"tq-dilat",nombre:"Dilatación térmica",estado:"pendiente"})}
+     r.temaIds=["tq-dilat","tq-calor","s0000a","tq-ciclos"].filter(id=>m.temas.some(t=>t.id===id));
+     if(!r.recupera&&m.evaluaciones.some(e=>e.id==="ev2ud8r"))r.recupera="ev2ud8r";return true}}
+];
+function aplicarAjustes(s){
+  const hechos=s.config.ajustes=Array.isArray(s.config.ajustes)?s.config.ajustes:[];const msgs=[];let nuevo=false;
+  AJUSTES.forEach(a=>{if(hechos.includes(a.id))return;nuevo=true;let ok=false;try{ok=a.fn(s)}catch(e){console.error(e)}hechos.push(a.id);if(ok)msgs.push(a.msg)});
+  return{nuevo,msgs};
+}
 async function cargarRemoto(){
   const{data,error}=await sb.from(TABLA).select("key,data").eq("user_id",usuario.id);if(error)throw error;
   Object.keys(remoto).forEach(k=>delete remoto[k]);data.forEach(r=>remoto[r.key]=JSON.stringify(r.data));
@@ -579,7 +592,7 @@ async function arrancarRemoto(){
   store.mode="db";store.assets=assetsSupabase();setSync("Sincronizando…","busy");
   try{
     const r=await cargarRemoto();loaded=true;
-    if(r){state=r;cacheLocal();render();setSync("Guardado")}
+    if(r){state=r;const aj=aplicarAjustes(state);if(aj.nuevo)commit(aj.msgs.join(" · "));else{cacheLocal();render();setSync("Guardado")}}
     else if(state){render();persist()}
     else{render();setSync("Sin datos todavía")}
   }catch(e){console.error(e);loaded=true;setSync("No se pudo conectar: trabajás con la copia de este navegador","err");render()}
