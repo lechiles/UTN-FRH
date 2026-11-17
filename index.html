@@ -551,7 +551,13 @@ const AJUSTES=[
    fn(s){const m=s.materias.find(m=>m.id==="fis2");if(!m)return false;const r=m.evaluaciones.find(e=>e.id==="evdud8r");if(!r)return false;
      if(!m.temas.some(t=>t.id==="tq-dilat")){const i=m.temas.findIndex(t=>t.id==="tq-calor");m.temas.splice(i<0?m.temas.length:i,0,{id:"tq-dilat",nombre:"Dilatación térmica",estado:"pendiente"})}
      r.temaIds=["tq-dilat","tq-calor","s0000a","tq-ciclos"].filter(id=>m.temas.some(t=>t.id===id));
-     if(!r.recupera&&m.evaluaciones.some(e=>e.id==="ev2ud8r"))r.recupera="ev2ud8r";return true}}
+     if(!r.recupera&&m.evaluaciones.some(e=>e.id==="ev2ud8r"))r.recupera="ev2ud8r";return true}},
+  {id:"2026-11-17-p3-fis2-1611",msg:"Cargué el 3.er parcial de Física II del 16/11 con sus temas. Adjuntale la foto desde su tarjeta.",
+   fn(s){const m=s.materias.find(m=>m.id==="fis2");if(!m)return false;m.examenes=m.examenes||[];if(m.examenes.some(e=>e.id==="p3fis21611"))return false;
+     const ids=["tq-dilat","tq-calor","s0000a","tq-ciclos"].filter(id=>m.temas.some(t=>t.id===id));
+     m.examenes.push({id:"p3fis21611",tipo:"p3",anio:2026,titulo:"FRH · 16/11/2026 · el que tomaron este año",temaIds:ids,url:"",fecha:"2026-11-17",
+       notas:"1) varilla 1 cm², 2 m, de 20 a 70 °C, volumen +0,3 %: β, largo y sección finales · 2) 2 kg de hielo a −20 °C → 1,5 kg de agua + 0,5 kg de vapor a 100 °C: calor necesario · 3) calorímetro con hielo a 0 °C + 60 g de vapor a 100 °C: calor del vapor y masa de hielo · 4) 1 mol diatómico a 227 °C y 2·10⁵ Pa, adiabática reversible a la mitad del volumen: P y T finales · 5) ciclo monoatómico horario con dos isotermas, A(15 atm, 5 L) B(15 atm, 15 L) C(5 atm, 45 L) D(5 atm, 15 L): Q de cada etapa y rendimiento."});
+     return true}}
 ];
 function aplicarAjustes(s){
   const hechos=s.config.ajustes=Array.isArray(s.config.ajustes)?s.config.ajustes:[];const msgs=[];let nuevo=false;
@@ -945,7 +951,7 @@ function tExamenes(m,modo){
   h+='<div style="display:flex;flex-direction:column;gap:10px">';
   ex.slice().sort((x,y)=>(+y.anio||0)-(+x.anio||0)).forEach(e=>{
     const href=e.url;
-    h+='<div class="evcard'+(e.hecho?' exhecho':'')+'"><div class="line"><label class="chk hecho-chk" title="Marcalo cuando lo hayas resuelto"><input type="checkbox" data-act="exHecho" data-id="'+e.id+'"'+(e.hecho?' checked':'')+'>Ya lo hice'+(e.hecho&&e.hechoFecha?' <span class="muted">('+fechaCorta(e.hechoFecha)+(e.minHecho?' · '+hm(e.minHecho):'')+')</span>':'')+'</label><span class="chip acc">'+(fin?'Final':TIPO_EX[e.tipo])+'</span><b class="num">'+esc(e.anio||"")+'</b><span class="t" style="flex:1 1 140px">'+esc(e.titulo||"")+'</span>'+(e.assetId?'<button class="btn sm" data-act="verArchivo" data-asset="'+esc(e.assetId)+'" data-title="'+esc(e.titulo||TIPO_EX[e.tipo])+'">Abrir</button>':href?'<a class="btn sm" href="'+esc(href)+'" target="_blank" rel="noopener">Abrir link</a>':'')+'<button class="btn sm" data-act="cronoEx" data-id="'+e.id+'" title="Cronometrá cuánto tardás; al terminar se suma a tus horas y queda tildado">Hacerlo con cronómetro</button><button class="btn ghost sm" data-act="borrarExamen" data-id="'+e.id+'">Borrar</button></div>'
+    h+='<div class="evcard'+(e.hecho?' exhecho':'')+'"><div class="line"><label class="chk hecho-chk" title="Marcalo cuando lo hayas resuelto"><input type="checkbox" data-act="exHecho" data-id="'+e.id+'"'+(e.hecho?' checked':'')+'>Ya lo hice'+(e.hecho&&e.hechoFecha?' <span class="muted">('+fechaCorta(e.hechoFecha)+(e.minHecho?' · '+hm(e.minHecho):'')+')</span>':'')+'</label><span class="chip acc">'+(fin?'Final':TIPO_EX[e.tipo])+'</span><b class="num">'+esc(e.anio||"")+'</b><span class="t" style="flex:1 1 140px">'+esc(e.titulo||"")+'</span>'+(e.assetId?'<button class="btn sm" data-act="verArchivo" data-asset="'+esc(e.assetId)+'" data-title="'+esc(e.titulo||TIPO_EX[e.tipo])+'">Abrir</button>':href?'<a class="btn sm" href="'+esc(href)+'" target="_blank" rel="noopener">Abrir link</a>':store.assets?'<label class="btn sm" style="cursor:pointer">Adjuntar foto o PDF<input type="file" accept="application/pdf,image/*" data-exfile="'+e.id+'" hidden></label>':'')+'<button class="btn sm" data-act="cronoEx" data-id="'+e.id+'" title="Cronometrá cuánto tardás; al terminar se suma a tus horas y queda tildado">Hacerlo con cronómetro</button><button class="btn ghost sm" data-act="borrarExamen" data-id="'+e.id+'">Borrar</button></div>'
       +'<div class="small">'+((e.temaIds||[]).length?(e.temaIds.map(id=>esc(temaNombre(m,id))).filter(Boolean).join(" · ")):'<span class="muted">Sin temas marcados: no cuenta para la frecuencia.</span>')+'</div>'
       +(e.notas?'<div class="small muted" style="white-space:pre-wrap">'+esc(e.notas)+'</div>':'')
       +((e.intentos||[]).length?(()=>{const its=e.intentos,u=its[its.length-1];return '<div class="intento"><div class="small"><b>Tus tiempos</b> <span class="muted">· '+fechaCorta(u.fecha)+' · total '+hm(u.min)+'</span></div><div class="ejs small">'+htmlIntento(u)+'</div>'+(its.length>1?'<details><summary class="small" style="cursor:pointer">Intentos anteriores ('+(its.length-1)+')</summary>'+its.slice(0,-1).reverse().map(it=>'<div class="small" style="margin-top:6px"><span class="muted">'+fechaCorta(it.fecha)+' · total '+hm(it.min)+'</span><div class="ejs">'+htmlIntento(it)+'</div></div>').join("")+'</details>':'')+'</div>'})():'')
@@ -1659,6 +1665,10 @@ document.addEventListener("click",e=>{
 document.addEventListener("change",e=>{
   const el=e.target;if(!state)return;
   const m=ui.mid?getM(ui.mid):null,d=el.dataset;
+  if(d.exfile&&m){const ex=m.examenes.find(x=>x.id===d.exfile),file=el.files&&el.files[0];if(!ex||!file||!store.assets)return;
+    const lb=el.closest("label");if(lb)lb.firstChild.textContent="Subiendo…";
+    store.assets.upload(file,file.type?undefined:{type:"application/pdf"}).then(r=>{ex.assetId=r.id;commit("Archivo adjuntado")})
+      .catch(err=>{console.error(err);render();toast(err&&err.code==="too_large"?"El archivo supera 20 MB: comprimilo o dividilo.":"No se pudo subir el archivo. Probá de nuevo.")});return}
   if(d.mfield&&m){let v=el.value;if(d.mfield==="nombre"&&!v.trim())return render();if(d.mfield==="dificultad")v=+v;m[d.mfield]=v;if(d.mfield==="condicion")sincCarrera(m);if(d.mfield==="tipo"){location.hash="#materia-"+m.id}commit("Guardado");return}
   if(d.tfield&&m){const t=m.temas.find(x=>x.id===d.id);if(!el.value.trim())return render();t.nombre=el.value.trim();m.temasSugeridos=false;commit("Tema renombrado");return}
   if(d.efield&&m){const ev=m.evaluaciones.find(x=>x.id===d.id);let v=el.value;
