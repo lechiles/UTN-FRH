@@ -223,6 +223,9 @@ a.mcard:hover{border-color:var(--line-strong);transform:translateY(-1px)}
 .evcard.exhecho>:not(.line){opacity:.6}
 .evcard.exhecho .line>:not(.hecho-chk):not(.btn){opacity:.6}
 .hecho-chk{font-weight:600;white-space:nowrap}
+.tgrupo-tit{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:16px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.tgrupo-tit:first-of-type{margin-top:4px}
+select.tparc{font-size:.8rem;padding:3px 6px;min-height:30px;max-width:120px}
 .intento{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:4px}
 .ejs{display:flex;flex-wrap:wrap;gap:4px 14px}
 .ejs .ej.lento{color:var(--warn)}
@@ -528,7 +531,7 @@ function sanear(s){
   (s.config.excepciones||[]).forEach(e=>{e.fecha=fecha(e.fecha);e.min=num(e.min)||0});
   s.materias.concat(s.archivo||[]).forEach(m=>{
     m.id=idok(m.id);m.mh=isFinite(+m.mh)?Math.abs(+m.mh)%360:220;m.dificultad=[1,2,3].includes(+m.dificultad)?+m.dificultad:2;
-    (m.temas||[]).forEach(t=>t.id=idok(t.id));
+    (m.temas||[]).forEach(t=>{t.id=idok(t.id);t.parcial=["p1","p2","p3","p4"].includes(t.parcial)?t.parcial:""});
     (m.tareas||[]).forEach(t=>{t.id=idok(t.id);t.min=num(t.min)||30;t.temaId=idok(t.temaId)});
     (m.evaluaciones||[]).forEach(e=>{e.id=idok(e.id);e.nota=num(e.nota);e.fecha=fecha(e.fecha);e.temaIds=(e.temaIds||[]).map(idok)});
     (m.apuntes||[]).forEach(a=>{a.id=idok(a.id);if(a.url!=null)a.url=link(a.url);if(a.assetId)a.assetId=idok(a.assetId)});
@@ -930,7 +933,7 @@ function tExamenes(m,modo){
     if(grupos.length>1){
       grupos.forEach(g=>{h+='<div class="hgrupo"><div class="hgrupo-tit"><b>'+TIPO_EX[g.k]+'</b><span class="small muted">'+g.n+(g.n>1?' clasificados':' clasificado')+'</span></div>'+g.ord.map(o=>barra(o.t,o.c,g.n)).join("")+'</div>'});
       h+='<details class="hgrupo"><summary class="small" style="cursor:pointer">Ver todos los parciales juntos</summary><div class="hbars" style="margin-top:8px">'+ord.map(o=>barra(o.t,o.c,fr.n)).join("")+'</div></details>';
-    }else ord.forEach(({t,c})=>{h+=barra(t,c,fr.n)});
+    }else if(grupos.length===1&&foco){const g=grupos[0];h+='<div class="small muted" style="margin:0 0 6px">Sobre '+g.n+' '+(g.n>1?'parciales':'parcial')+' de tipo '+TIPO_EX[g.k]+'</div>';ord.forEach(o=>{h+=barra(o.t,Math.min(o.c,g.ord.find(x=>x.t===o.t)?g.ord.find(x=>x.t===o.t).c:0),g.n)})}else ord.forEach(({t,c})=>{h+=barra(t,c,fr.n)});
     if(foco&&todos.length>ord.length)h+='<details class="hgrupo"><summary class="small" style="cursor:pointer">Ver también los temas que no entran ('+(todos.length-ord.length)+')</summary><div class="hbars" style="margin-top:8px">'+todos.filter(o=>!enFoco(o)).map(o=>barra(o.t,o.c,fr.n)).join("")+'</div></details>';
     const flojos=ord.filter(o=>o.c/fr.n>=.5&&o.t.estado!=="dominado");
     h+='</div>'+(flojos.length?'<div class="alert crit" style="margin-top:10px"><span>Aparecen en la mitad o más de '+(fin?'los finales':'los parciales')+' y todavía no los dominás: <b>'+flojos.map(o=>esc(o.t.nombre)).join(", ")+'</b>.</span></div>':'')+'</div>';
@@ -968,19 +971,28 @@ function tTemas(m){
   const fr=frecuencias(m);
   let h='<header><h2>Temas</h2><p>Marcá qué dominás y qué te falta. Lo pendiente pesa más en el plan.</p></header>';
   if(m.temasSugeridos&&m.temas.length)h+='<div class="alert info" style="margin-bottom:12px"><span>Estos temas son una guía de partida. Ajustalos al programa de tu cátedra: renombrá, borrá o agregá los que falten.</span><button class="btn sm" data-act="okSugeridos">Listo, ya los revisé</button></div>';
-  h+='<form class="form" data-form="tema" style="margin-bottom:10px"><input type="text" name="nombre" id="f-tema" class="grow" placeholder="Nuevo tema, por ejemplo: Ley de Faraday" required><button class="btn primary" type="submit">Agregar tema</button></form>';
+  h+='<form class="form" data-form="tema" style="margin-bottom:10px"><input type="text" name="nombre" id="f-tema" class="grow" placeholder="Nuevo tema, por ejemplo: Ley de Faraday" required><select name="parcial" id="f-tema-parcial" aria-label="Parcial">'+PARC_OPC.map(([k,v])=>'<option value="'+k+'"'+((ui.lastParcial||"")===k?" selected":"")+'>'+v+'</option>').join("")+'</select><button class="btn primary" type="submit">Agregar tema</button></form>';
   if(!m.temas.length)return h+'<div class="empty">Sin temas todavía.</div>';
+  const conParcial=m.temas.some(t=>t.parcial);
+  const grupos=conParcial?["p1","p2","p3","p4",""].map(k=>({k,ts:m.temas.filter(t=>(t.parcial||"")===k)})).filter(g=>g.ts.length):[{k:null,ts:m.temas}];
+  if(!conParcial)h+='<p class="small muted" style="margin:0 0 8px">Podés separar los temas por parcial con el selector de cada uno.</p>';
+  grupos.forEach(g=>{
+  if(g.k!==null){const dom=g.ts.filter(t=>t.estado==="dominado").length;h+='<div class="tgrupo-tit"><b>'+(g.k?TIPO_EX[g.k]:"Sin parcial asignado")+'</b><span class="small muted">'+g.ts.length+' tema'+(g.ts.length>1?"s":"")+' · '+dom+' dominado'+(dom===1?"":"s")+'</span></div>'}
   h+='<div class="list">';
-  m.temas.forEach((t,i)=>{
+  g.ts.forEach((t,i)=>{
     const nt=m.tareas.filter(x=>x.temaId===t.id),hechas=nt.filter(x=>x.hecha).length;
     h+='<div class="item"><span class="num muted small" style="width:22px">'+(i+1)+'</span><input type="text" class="t" value="'+esc(t.nombre)+'" data-tfield="nombre" data-id="'+t.id+'" id="tn-'+t.id+'" aria-label="Nombre del tema" style="border-color:transparent;background:transparent">'
       +'<span class="small muted">'+[nt.length?hechas+"/"+nt.length+" tareas":"",fr.n?"en "+(fr.c[t.id]||0)+"/"+fr.n+(fr.modo==="final"?" finales":fr.modo==="parcial"?" parciales":" exámenes"):"",t.estado==="dominado"?"repaso "+fechaCorta(proxRepaso(m,t)):""].filter(Boolean).join(" · ")+'</span>'
       +'<div class="seg" role="group" aria-label="Estado">'+[["pendiente","p"],["encurso","e"],["dominado","d"]].map(([k,c])=>'<button class="'+c+(t.estado===k?" on":"")+'" data-act="estTema" data-id="'+t.id+'" data-v="'+k+'" aria-pressed="'+(t.estado===k)+'">'+EST_TEMA[k]+'</button>').join("")+'</div>'
+      +'<select class="tparc" data-tparcial="'+t.id+'" id="tp-'+t.id+'" aria-label="Parcial del tema" title="A qué parcial pertenece">'+PARC_OPC.map(([k,v])=>'<option value="'+k+'"'+((t.parcial||"")===k?" selected":"")+'>'+v+'</option>').join("")+'</select>'
       +'<button class="btn sm soft" data-act="dividir" data-id="'+t.id+'" title="Crear tareas concretas para este tema">Dividir en tareas</button>'
       +'<button class="btn ghost sm" data-act="borrarTema" data-id="'+t.id+'" aria-label="Borrar tema">Borrar</button></div>';
   });
-  return h+'</div>';
+  h+='</div>';
+  });
+  return h;
 }
+const PARC_OPC=[["","Sin parcial"],["p1","1.er parcial"],["p2","2.º parcial"],["p3","3.er parcial"],["p4","4.º parcial"]];
 const PASOS=[["Leer teoría y armar resumen de ",45],["Resolver ejercicios de la guía: ",60],["Repasar dudas y autoevaluarte en ",30]];
 function tTareas(m){
   let h='<header><h2>Tareas</h2><p>Pasos concretos con tiempo estimado. El plan las toma en orden de tema.</p></header>';
@@ -1675,6 +1687,7 @@ document.addEventListener("change",e=>{
     store.assets.upload(file,file.type?undefined:{type:"application/pdf"}).then(r=>{ex.assetId=r.id;commit("Archivo adjuntado")})
       .catch(err=>{console.error(err);render();toast(err&&err.code==="too_large"?"El archivo supera 20 MB: comprimilo o dividilo.":"No se pudo subir el archivo. Probá de nuevo.")});return}
   if(d.mfield&&m){let v=el.value;if(d.mfield==="nombre"&&!v.trim())return render();if(d.mfield==="dificultad")v=+v;m[d.mfield]=v;if(d.mfield==="condicion")sincCarrera(m);if(d.mfield==="tipo"){location.hash="#materia-"+m.id}commit("Guardado");return}
+  if(d.tparcial&&m){const t=m.temas.find(x=>x.id===d.tparcial);if(!t)return;t.parcial=el.value;commit(el.value?"Tema movido al "+TIPO_EX[el.value]:"Tema sin parcial asignado");return}
   if(d.tfield&&m){const t=m.temas.find(x=>x.id===d.id);if(!el.value.trim())return render();t.nombre=el.value.trim();m.temasSugeridos=false;commit("Tema renombrado");return}
   if(d.efield&&m){const ev=m.evaluaciones.find(x=>x.id===d.id);let v=el.value;
     if(d.efield==="nota"){ev.nota=v===""?null:+v;if(v!==""&&ev.estado!=="ausente")ev.estado=+v>=6?"aprobado":"desaprobado";
@@ -1699,7 +1712,7 @@ document.addEventListener("submit",async e=>{
   const fd=new FormData(f),k=f.dataset.form,m=ui.mid?getM(ui.mid):null;
   const tema=fd.get("tema")||"";if(fd.has("tema"))ui.lastTema=tema;
   switch(k){
-    case "tema":{const n=String(fd.get("nombre")).trim();if(!n)return;m.temas.push({id:uid(),nombre:n,estado:"pendiente"});ui.refocus="f-tema";commit("Tema agregado");break}
+    case "tema":{const n=String(fd.get("nombre")).trim();if(!n)return;const pa=String(fd.get("parcial")||"");ui.lastParcial=pa;m.temas.push({id:uid(),nombre:n,estado:"pendiente",parcial:pa});ui.refocus="f-tema";commit("Tema agregado");break}
     case "tarea":{const n=String(fd.get("texto")).trim();if(!n)return;m.tareas.push({id:uid(),texto:n,temaId:tema,min:+fd.get("min")||45,hecha:false});ui.refocus="f-tarea";commit("Tarea agregada");break}
     case "eval":{const fe=fd.get("fecha");if(!fe)return;m.evaluaciones.push({id:uid(),tipo:fd.get("tipo"),nombre:String(fd.get("nombre")||"").trim(),fecha:fe,temaIds:fd.getAll("temas"),recupera:fd.get("recupera")||"",nota:null,estado:"pendiente"});if(m.tipo==="final"&&fd.get("tipo")==="final"&&m.condicion==="libre"){}commit("Evaluación guardada: el plan se reajustó");break}
     case "ej":{const n=String(fd.get("texto")).trim();if(!n)return;m.ejercicios.push({id:uid(),texto:n,temaId:tema,estado:"pendiente"});ui.refocus="f-ej";commit("Ejercicio agregado");break}
